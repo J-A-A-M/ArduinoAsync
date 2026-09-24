@@ -18,8 +18,7 @@ short Async::setInterval(void (*fun)(void), unsigned long time) {
 	if(fun == nullptr || nNodes >= sizePool)
 		return -1;
 
-	unsigned short i = 0;
-	for(; i < sizePool; i++) {
+	for(unsigned short i = 0; i < sizePool; i++) {
         if((nodePool + i)->flags & 0b00000010) { // Is finished, bit 1
             *(nodePool + i) = {
                 .lastExecution = millis(),
@@ -27,20 +26,19 @@ short Async::setInterval(void (*fun)(void), unsigned long time) {
                 .flags = 0b00000001,
                 .function = fun
             };
-            break;
+            nNodes++;
+            return i;
         }
 	}
 
-	nNodes++;
-	return i;
+	return -1; // No free slot
 }
 
 short Async::setTimeout(void (*fun)(void), unsigned long time) {
 	if(fun == nullptr || nNodes >= sizePool)
 		return -1;
 
-    unsigned short i = 0;
-	for(; i < sizePool; i++) {
+	for(unsigned short i = 0; i < sizePool; i++) {
         if((nodePool + i)->flags & 0b00000010) { // Is finished, bit 1
             *(nodePool + i) = {
                 .lastExecution = millis(),
@@ -48,19 +46,24 @@ short Async::setTimeout(void (*fun)(void), unsigned long time) {
                 .flags = 0b00000000,
                 .function = fun
             };
-            break;
+            nNodes++;
+            return i;
         }
 	}
 
-	nNodes++;
-	return i;
+	return -1; // No free slot
 }
 
 bool Async::clearInterval(short id) {
     if(id < 0 || (unsigned short) id >= sizePool)
         return false;
 
+    if((nodePool + id)->flags & 0b00000010) // Already finished, nothing to release
+        return true;
+
     (nodePool + id)->flags = 0b00000010; // Mark as finished, bit 1
+    nNodes--; // Release the slot in the counter too, otherwise the pool is seen
+              // as full after sizePool calls and every later set* returns -1
     return true;
 }
 
