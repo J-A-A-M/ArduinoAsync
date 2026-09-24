@@ -71,13 +71,11 @@ void Async::run() {
 	for(unsigned short i = 0; i < sizePool; i++) {
 
         if(!((nodePool + i)->flags & 0b00000010)) { // Is not finished
-           	unsigned long elapsedTime;
-        	if(millis() < (nodePool + i)->lastExecution) { // Overflow detected
-        		elapsedTime = (0xFFFFFFFFUL-(nodePool + i)->lastExecution) + millis();
-            }
-            else {
-                elapsedTime = (millis() - (nodePool + i)->lastExecution);
-            }
+            // Unsigned arithmetic already wraps correctly, so the millis()
+            // overflow at ~49.7 days needs no special case. Read the clock
+            // once per node: the old code sampled it twice and could compare
+            // one value but subtract another.
+           	unsigned long elapsedTime = millis() - (nodePool + i)->lastExecution;
 
         	if(elapsedTime >= (nodePool + i)->interval) {
 	            (nodePool + i)->function();
