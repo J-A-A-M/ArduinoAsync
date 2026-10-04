@@ -65,6 +65,9 @@ You can Stop the execution of a function previously added by calling `clearInter
 ```c++
 asyncEngine.clearInterval(id);
 ```
+It is safe to call `clearInterval`, `setTimeout` and `setInterval` from inside a callback, including clearing the callback's own id.
+
+Host regression tests: `g++ -std=c++17 -I test/stub async.cpp test/host_test.cpp -o async_test && ./async_test`
 
 This full example can be found on [examples/blink_led.ino](https://github.com/MatheusAlvesA/ArduinoAsync/blob/master/examples/blink_led.ino "blink_led.ino").
 
