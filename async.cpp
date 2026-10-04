@@ -78,12 +78,18 @@ void Async::run() {
            	unsigned long elapsedTime = millis() - (nodePool + i)->lastExecution;
 
         	if(elapsedTime >= (nodePool + i)->interval) {
-	            (nodePool + i)->function();
-	            if(!((nodePool + i)->flags & 0b00000001)) { // Is not loop, bit 0
-	                (nodePool + i)->flags = 0b00000010; // Mark as finished, bit 1
+	            ScheduleNode* node = nodePool + i;
+	            if(!(node->flags & 0b00000001)) { // Is not loop, bit 0
+	                // Release the slot before the call: the callback may clear
+	                // its own id (must not decrement nNodes twice) or schedule
+	                // a new timer that reuses this slot (must not be wiped).
+	                node->flags = 0b00000010; // Mark as finished, bit 1
 	                nNodes--;
+	                node->function();
 	            } else {
-	                (nodePool + i)->lastExecution = millis();
+	                node->function();
+	                if(!(node->flags & 0b00000010)) // Not cleared inside the callback
+	                    node->lastExecution = millis();
 	            }
 	        } // End elapsed time greater than interval of node
         } // End if node not finished
